@@ -22,14 +22,19 @@ export default function Home() {
   useEffect(() => {
     const actions = ["walk", "stop", "speak", "idle"];
     const timer = setInterval(() => {
-      if (isRequesting || isDragging) return;
+      console.log("[Idle Timer] Triggered");
+      if (isRequesting || isDragging) {
+        console.log("[Idle Timer] Skipped due to request/drag");
+        return;
+      }
       const action = actions[Math.floor(Math.random() * actions.length)];
+      console.log("[Idle Timer] Action:", action);
       switch (action) {
         case "walk":
-          setPos({
-            x: pos.x + Math.random() * 40 - 20,
-            y: pos.y + Math.random() * 20 - 10,
-          });
+          const newX = pos.x + Math.random() * 40 - 20;
+          const newY = pos.y + Math.random() * 20 - 10;
+          console.log("[Walk] New position:", { x: newX, y: newY });
+          setPos({ x: newX, y: newY });
           break;
         case "speak":
           speak("normal");
@@ -46,33 +51,45 @@ export default function Home() {
   }, [pos, isRequesting, isDragging]);
 
   const speak = async (situation) => {
-    if (isRequesting) return;
+    if (isRequesting) {
+      console.log("[Speak] Skipped, already requesting");
+      return;
+    }
+    console.log("[Speak] Start for situation:", situation);
     setIsRequesting(true);
     setMood(situation);
     setText("……ん？");
     setShowBubble(true);
     const prompt = generateHiyoriPrompt({ situation });
+    console.log("[Prompt]", prompt);
     const serifu = await fetchHiyoriLine(prompt);
     const cleanText = serifu.replace(/^「|」$/g, "");
+    console.log("[Response]", cleanText);
     setText(cleanText);
 
     const duration = Math.max(2000, cleanText.length * 60);
+    console.log("[Speech Duration]", duration);
 
     setTimeout(() => {
       setShowBubble(false);
       setIsRequesting(false);
+      console.log("[Speak] End");
     }, duration);
   };
 
   const handleTap = () => {
-    if (isRequesting) return;
-    // setPos({ x: 0, y: 0 }); // ← 削除して位置リセットを防ぐ
+    if (isRequesting) {
+      console.log("[Tap] Ignored due to ongoing request");
+      return;
+    }
+    console.log("[Tap] Triggered");
     setAnimClass("animate-bounce-fast");
     speak("happy");
     setTimeout(() => setAnimClass(""), 700);
   };
 
   const handleSlide = ({ dx, dy, isDragging }) => {
+    console.log("[Slide]", { dx, dy, isDragging });
     if (isDragging) {
       setIsDragging(true);
       setPos({ x: dx, y: dy });
@@ -88,10 +105,10 @@ export default function Home() {
     <div className="min-h-screen flex flex-col items-center justify-end bg-gradient-to-t from-pink-50/70 to-white pb-10 overflow-hidden select-none relative">
       {showBubble && (
         <div
-          className="absolute z-10"
+          className="absolute z-10 w-screen max-w-full px-4"
           style={{
             left: `calc(50% + ${pos.x}px)`,
-            top: `calc(60% + ${pos.y}px - 280px)`,
+            top: `calc(60% + ${pos.y}px - 180px)`,
             transform: "translateX(-50%)",
           }}
         >
