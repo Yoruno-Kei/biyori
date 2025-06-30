@@ -3,7 +3,11 @@ module.exports = {
   theme: {
     extend: {
       animation: {
-        float: "float 3s ease-in-out infinite"
+        fadeIn: 'fadeIn 0.4s',
+        bounce: 'bounce 1.2s infinite',
+      },
+      keyframes: {
+        fadeIn: { '0%': { opacity: 0 }, '100%': { opacity: 1 } },
       }
     },
   },
