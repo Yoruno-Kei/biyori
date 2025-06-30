@@ -12,8 +12,11 @@ export default function HiyoriAvatar({ onTap, onSlide }) {
     const centerY = bounds.top + bounds.height / 2;
     const centerX = bounds.left + bounds.width / 2;
 
-    if (Math.abs(t.clientY - centerY) > bounds.height * 0.25 ||
-        Math.abs(t.clientX - centerX) > bounds.width * 0.3) return;
+    // ドラッグ判定を画像中心の小さな領域に限定（服をつかまれる想定）
+    const relativeX = t.clientX - bounds.left;
+    const relativeY = t.clientY - bounds.top;
+    const withinMiddle = relativeX > bounds.width * 0.4 && relativeX < bounds.width * 0.6 && relativeY > bounds.height * 0.4 && relativeY < bounds.height * 0.6;
+    if (!withinMiddle) return;
 
     touchStart.current = { x: t.clientX, y: t.clientY, time: Date.now() };
     setIsDragging(true);
@@ -24,7 +27,7 @@ export default function HiyoriAvatar({ onTap, onSlide }) {
     const t = e.touches[0];
     const dx = t.clientX - touchStart.current.x;
     const dy = t.clientY - touchStart.current.y;
-    const angle = Math.max(-20, Math.min(20, dx / 3)); // 最大回転角 ±20度
+    const angle = Math.max(-60, Math.min(60, dx)); // 最大 ±60度（ぶら下がる感）
     setRotation(angle);
     onSlide?.({ dx, dy, isDragging: true });
   };
@@ -43,7 +46,8 @@ export default function HiyoriAvatar({ onTap, onSlide }) {
     }
 
     setIsDragging(false);
-    setRotation(0);
+    setRotation(90); // 掴まれたあと90度まで回転しその後戻る
+    setTimeout(() => setRotation(0), 300);
     touchStart.current = null;
   };
 
@@ -59,7 +63,7 @@ export default function HiyoriAvatar({ onTap, onSlide }) {
       <img
         src="/biyori/images/Hiyori_idle.png"
         alt="ひより"
-        className="w-full h-auto drop-shadow-lg pointer-events-auto transition-transform duration-100 ease-in-out"
+        className="w-full h-auto drop-shadow-lg pointer-events-auto transition-transform duration-200 ease-in-out"
         style={{ transform: `rotate(${rotation}deg)` }}
         draggable={false}
       />
