@@ -1,15 +1,19 @@
 module.exports = {
   content: ["./src/**/*.{js,jsx,ts,tsx}"],
-  theme: {
-    extend: {
-      animation: {
-        fadeIn: 'fadeIn 0.4s',
-        bounce: 'bounce 1.2s infinite',
+// tailwind.config.js
+theme: {
+  extend: {
+    animation: {
+      'bounce-fast': 'bounce 0.5s',
+      'drop': 'drop 0.4s',
+    },
+    keyframes: {
+      drop: {
+        '0%': { transform: 'translateY(-40px)' },
+        '100%': { transform: 'translateY(0)' },
       },
-      keyframes: {
-        fadeIn: { '0%': { opacity: 0 }, '100%': { opacity: 1 } },
-      }
     },
   },
+},
   plugins: [],
 };
