@@ -1,15 +1,20 @@
 {
-  "name": "ととのえびより",
-  "short_name": "びより",
-  "start_url": ".",
-  "display": "standalone",
-  "background_color": "#00000000",
-  "theme_color": "#00000000",
-  "icons": [
-    {
-      "src": "icon-192.png",
-      "sizes": "192x192",
-      "type": "image/png"
-    }
-  ]
+    "short_name": "びより",
+    "name": "ととのえびより",
+    "icons": [
+        {
+            "src": "/biyori/icons/icon-192x192.png",
+            "sizes": "192x192",
+            "type": "image/png"
+        },
+        {
+            "src": "/biyori/icons/icon-512x512.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        }
+    ],
+    "start_url": "/biyori/",
+    "display": "standalone",
+    "background_color": "#fff0f6",
+    "theme_color": "#f883b6"
 }

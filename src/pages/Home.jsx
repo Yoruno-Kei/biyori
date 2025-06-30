@@ -1,3 +1,4 @@
+// Home.jsx
 import React, { useState, useEffect, useRef } from "react";
 import SpeechBubble from "../components/SpeechBubble";
 import HiyoriAvatar from "../components/HiyoriAvatar";
@@ -14,56 +15,63 @@ export default function Home() {
   const [isRequesting, setIsRequesting] = useState(false);
   const dragStart = useRef(null);
 
-  // アバターちょこちょこ動く
-  useEffect(() => {
-    const timer = setInterval(() => {
-      if (!animClass) {
-        setPos({
-          x: Math.random() * 20 - 10,
-          y: Math.random() * 10 - 5,
-        });
-      }
-    }, 2800);
-    return () => clearInterval(timer);
-  }, [animClass]);
+  useIdleMonitor(() => speak("sleep"));
 
-  // 吹き出し＋Gemini
+  useEffect(() => {
+    const actions = ["walk", "stop", "speak", "idle"];
+    const timer = setInterval(() => {
+      if (isRequesting) return;
+      const action = actions[Math.floor(Math.random() * actions.length)];
+      switch (action) {
+        case "walk":
+          setPos({
+            x: pos.x + Math.random() * 40 - 20,
+            y: pos.y + Math.random() * 20 - 10,
+          });
+          break;
+        case "speak":
+          speak("normal");
+          break;
+        case "idle":
+          setAnimClass("animate-bounce-fast");
+          setTimeout(() => setAnimClass(""), 600);
+          break;
+        default:
+          break;
+      }
+    }, 5000);
+    return () => clearInterval(timer);
+  }, [pos, isRequesting]);
+
   const speak = async (situation) => {
     if (isRequesting) return;
     setIsRequesting(true);
     setMood(situation);
+    setText("……ん？");
+    setShowBubble(true);
     const prompt = generateHiyoriPrompt({ situation });
     const serifu = await fetchHiyoriLine(prompt);
     setText(serifu.replace(/^「|」$/g, ""));
-    setShowBubble(true);
     setTimeout(() => {
       setShowBubble(false);
       setIsRequesting(false);
-    }, 2200);
+    }, 2600);
   };
 
-  // 5分放置
-  useIdleMonitor(() => speak("sleep"));
-
-  // タップ（嬉しい・ビクッ）
   const handleTap = () => {
     setAnimClass("animate-bounce-fast");
     speak("happy");
     setTimeout(() => setAnimClass(""), 700);
   };
 
-  // スライド系（捕まった/持ち上げアニメ）
-  const handleSlide = ({ dx, dy }) => {
-    setAnimClass("brightness-110 scale-105");
-    setPos({ x: dx, y: dy - 30 });
-    speak("warning");
-    setTimeout(() => {
-      setAnimClass("animate-drop");
-      setTimeout(() => {
-        setPos({ x: 0, y: 0 });
-        setAnimClass("");
-      }, 500);
-    }, 600);
+  const handleSlide = ({ dx, dy, isDragging }) => {
+    if (isDragging) {
+      setPos({ x: dx, y: dy });
+    } else {
+      speak("warning");
+      setAnimClass("brightness-110 scale-105");
+      setTimeout(() => setAnimClass(""), 500);
+    }
   };
 
   return (
