@@ -13,14 +13,16 @@ export default function Home() {
   const [pos, setPos] = useState({ x: 0, y: 0 });
   const [animClass, setAnimClass] = useState("");
   const [isRequesting, setIsRequesting] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
   const dragStart = useRef(null);
+  const avatarRef = useRef(null);
 
   useIdleMonitor(() => speak("sleep"));
 
   useEffect(() => {
     const actions = ["walk", "stop", "speak", "idle"];
     const timer = setInterval(() => {
-      if (isRequesting) return;
+      if (isRequesting || isDragging) return;
       const action = actions[Math.floor(Math.random() * actions.length)];
       switch (action) {
         case "walk":
@@ -41,7 +43,7 @@ export default function Home() {
       }
     }, 5000);
     return () => clearInterval(timer);
-  }, [pos, isRequesting]);
+  }, [pos, isRequesting, isDragging]);
 
   const speak = async (situation) => {
     if (isRequesting) return;
@@ -51,14 +53,20 @@ export default function Home() {
     setShowBubble(true);
     const prompt = generateHiyoriPrompt({ situation });
     const serifu = await fetchHiyoriLine(prompt);
-    setText(serifu.replace(/^「|」$/g, ""));
+    const cleanText = serifu.replace(/^「|」$/g, "");
+    setText(cleanText);
+
+    const duration = Math.max(2000, cleanText.length * 60);
+
     setTimeout(() => {
       setShowBubble(false);
       setIsRequesting(false);
-    }, 2600);
+    }, duration);
   };
 
   const handleTap = () => {
+    if (isRequesting) return;
+    // setPos({ x: 0, y: 0 }); // ← 削除して位置リセットを防ぐ
     setAnimClass("animate-bounce-fast");
     speak("happy");
     setTimeout(() => setAnimClass(""), 700);
@@ -66,19 +74,33 @@ export default function Home() {
 
   const handleSlide = ({ dx, dy, isDragging }) => {
     if (isDragging) {
+      setIsDragging(true);
       setPos({ x: dx, y: dy });
     } else {
-      speak("warning");
+      setIsDragging(false);
       setAnimClass("brightness-110 scale-105");
+      speak("warning");
       setTimeout(() => setAnimClass(""), 500);
     }
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-end bg-gradient-to-t from-pink-50/70 to-white pb-10">
-      {showBubble && <SpeechBubble text={text} mood={mood} />}
+    <div className="min-h-screen flex flex-col items-center justify-end bg-gradient-to-t from-pink-50/70 to-white pb-10 overflow-hidden select-none relative">
+      {showBubble && (
+        <div
+          className="absolute z-10"
+          style={{
+            left: `calc(50% + ${pos.x}px)`,
+            top: `calc(60% + ${pos.y}px - 280px)`,
+            transform: "translateX(-50%)",
+          }}
+        >
+          <SpeechBubble text={text} mood={mood} />
+        </div>
+      )}
       <div
-        className={`transition-transform duration-700 ${animClass}`}
+        ref={avatarRef}
+        className={`transition-transform duration-300 ease-linear ${animClass}`}
         style={{
           transform: `translate(${pos.x}px, ${pos.y}px)`,
         }}

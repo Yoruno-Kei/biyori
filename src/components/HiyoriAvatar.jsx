@@ -1,52 +1,103 @@
-// HiyoriAvatar.jsx
-import React, { useRef } from "react";
+// Home.jsx
+import React, { useState, useEffect, useRef } from "react";
+import SpeechBubble from "../components/SpeechBubble";
+import HiyoriAvatar from "../components/HiyoriAvatar";
+import { fetchHiyoriLine } from "../api/GeminiClient";
+import { generateHiyoriPrompt } from "../utils/GeminiPrompt";
+import useIdleMonitor from "../hooks/useIdleMonitor";
 
-export default function HiyoriAvatar({ onTap, onSlide }) {
-  const touchStart = useRef(null);
+export default function Home() {
+  const [text, setText] = useState("");
+  const [showBubble, setShowBubble] = useState(false);
+  const [mood, setMood] = useState("normal");
+  const [pos, setPos] = useState({ x: 0, y: 0 });
+  const [animClass, setAnimClass] = useState("");
+  const [isRequesting, setIsRequesting] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  const dragStart = useRef(null);
 
-  const handleTouchStart = (e) => {
-    const t = e.touches[0];
-    touchStart.current = { x: t.clientX, y: t.clientY, time: Date.now() };
+  useIdleMonitor(() => speak("sleep"));
+
+  useEffect(() => {
+    const actions = ["walk", "stop", "speak", "idle"];
+    const timer = setInterval(() => {
+      if (isRequesting || isDragging) return;
+      const action = actions[Math.floor(Math.random() * actions.length)];
+      switch (action) {
+        case "walk":
+          setPos({
+            x: pos.x + Math.random() * 40 - 20,
+            y: pos.y + Math.random() * 20 - 10,
+          });
+          break;
+        case "speak":
+          speak("normal");
+          break;
+        case "idle":
+          setAnimClass("animate-bounce-fast");
+          setTimeout(() => setAnimClass(""), 600);
+          break;
+        default:
+          break;
+      }
+    }, 5000);
+    return () => clearInterval(timer);
+  }, [pos, isRequesting, isDragging]);
+
+  const speak = async (situation) => {
+    if (isRequesting) return;
+    setIsRequesting(true);
+    setMood(situation);
+    setText("……ん？");
+    setShowBubble(true);
+    const prompt = generateHiyoriPrompt({ situation });
+    const serifu = await fetchHiyoriLine(prompt);
+    const cleanText = serifu.replace(/^「|」$/g, "");
+    setText(cleanText);
+
+    // セリフの長さに応じて表示時間を変える（50文字/秒目安）
+    const duration = Math.max(2000, cleanText.length * 60);
+
+    setTimeout(() => {
+      setShowBubble(false);
+      setIsRequesting(false);
+    }, duration);
   };
 
-  const handleTouchMove = (e) => {
-    if (!touchStart.current) return;
-    const t = e.touches[0];
-    const dx = t.clientX - touchStart.current.x;
-    const dy = t.clientY - touchStart.current.y;
-    onSlide && onSlide({ dx, dy, isDragging: true });
+  const handleTap = () => {
+    if (isRequesting) return;
+    setAnimClass("animate-bounce-fast");
+    speak("happy");
+    setTimeout(() => setAnimClass(""), 700);
   };
 
-  const handleTouchEnd = (e) => {
-    if (!touchStart.current) return;
-    const t = e.changedTouches[0];
-    const dx = t.clientX - touchStart.current.x;
-    const dy = t.clientY - touchStart.current.y;
-    const dt = Date.now() - touchStart.current.time;
-
-    if (Math.abs(dx) > 20 || Math.abs(dy) > 20) {
-      onSlide && onSlide({ dx, dy, isDragging: false });
-    } else if (dt < 500) {
-      onTap && onTap();
+  const handleSlide = ({ dx, dy, isDragging }) => {
+    if (isDragging) {
+      setIsDragging(true);
+      setPos({ x: dx, y: dy });
+    } else {
+      setIsDragging(false);
+      setAnimClass("brightness-110 scale-105");
+      speak("warning");
+      setTimeout(() => setAnimClass(""), 500);
     }
-    touchStart.current = null;
   };
 
   return (
-    <div
-      className="w-[50vw] max-w-xs mx-auto select-none"
-      style={{ touchAction: "manipulation" }}
-      onTouchStart={handleTouchStart}
-      onTouchMove={handleTouchMove}
-      onTouchEnd={handleTouchEnd}
-      onClick={onTap}
-    >
-      <img
-        src="/biyori/images/Hiyori_idle.png"
-        alt="ひより"
-        className="w-full h-auto drop-shadow-lg pointer-events-auto select-none"
-        draggable={false}
-      />
+    <div className="min-h-screen flex flex-col items-center justify-end bg-gradient-to-t from-pink-50/70 to-white pb-10 overflow-hidden select-none">
+      {showBubble && (
+        <div className="absolute top-5 w-full flex justify-center z-10">
+          <SpeechBubble text={text} mood={mood} />
+        </div>
+      )}
+      <div
+        className={`transition-transform duration-300 ease-linear ${animClass}`}
+        style={{
+          transform: `translate(${pos.x}px, ${pos.y}px)`,
+        }}
+      >
+        <HiyoriAvatar onTap={handleTap} onSlide={handleSlide} />
+      </div>
     </div>
   );
 }
