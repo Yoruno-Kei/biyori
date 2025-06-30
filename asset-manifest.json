@@ -1,0 +1,13 @@
+{
+  "files": {
+    "main.css": "/biyori/static/css/main.4a911800.css",
+    "main.js": "/biyori/static/js/main.ec028457.js",
+    "index.html": "/biyori/index.html",
+    "main.4a911800.css.map": "/biyori/static/css/main.4a911800.css.map",
+    "main.ec028457.js.map": "/biyori/static/js/main.ec028457.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.4a911800.css",
+    "static/js/main.ec028457.js"
+  ]
+}
