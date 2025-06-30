@@ -22,18 +22,12 @@ export default function Home() {
   useEffect(() => {
     const actions = ["walk", "stop", "speak", "idle"];
     const timer = setInterval(() => {
-      console.log("[Idle Timer] Triggered");
-      if (isRequesting || isDragging) {
-        console.log("[Idle Timer] Skipped due to request/drag");
-        return;
-      }
+      if (isRequesting || isDragging) return;
       const action = actions[Math.floor(Math.random() * actions.length)];
-      console.log("[Idle Timer] Action:", action);
       switch (action) {
         case "walk":
           const newX = pos.x + Math.random() * 40 - 20;
           const newY = pos.y + Math.random() * 20 - 10;
-          console.log("[Walk] New position:", { x: newX, y: newY });
           setPos({ x: newX, y: newY });
           break;
         case "speak":
@@ -51,58 +45,44 @@ export default function Home() {
   }, [pos, isRequesting, isDragging]);
 
   const speak = async (situation) => {
-    if (isRequesting) {
-      console.log("[Speak] Skipped, already requesting");
-      return;
-    }
-    console.log("[Speak] Start for situation:", situation);
+    if (isRequesting) return;
     setIsRequesting(true);
     setMood(situation);
     setText("……ん？");
     setShowBubble(true);
     const prompt = generateHiyoriPrompt({ situation });
-    console.log("[Prompt]", prompt);
     const serifu = await fetchHiyoriLine(prompt);
     const cleanText = serifu.replace(/^「|」$/g, "");
-    console.log("[Response]", cleanText);
     setText(cleanText);
-
     const duration = Math.max(2000, cleanText.length * 60);
-    console.log("[Speech Duration]", duration);
-
     setTimeout(() => {
       setShowBubble(false);
       setIsRequesting(false);
-      console.log("[Speak] End");
     }, duration);
   };
 
   const handleTap = () => {
-    if (isRequesting) {
-      console.log("[Tap] Ignored due to ongoing request");
-      return;
-    }
-    console.log("[Tap] Triggered");
+    if (isRequesting) return;
     setAnimClass("animate-bounce-fast");
     speak("happy");
     setTimeout(() => setAnimClass(""), 700);
   };
 
   const handleSlide = ({ dx, dy, isDragging }) => {
-    console.log("[Slide]", { dx, dy, isDragging });
     if (isDragging) {
       setIsDragging(true);
       setPos({ x: dx, y: dy });
     } else {
       setIsDragging(false);
-      setAnimClass("brightness-110 scale-105");
+      setAnimClass("rotate-12 scale-110");
       speak("warning");
       setTimeout(() => setAnimClass(""), 500);
     }
   };
 
-  const bubbleOffsetY = pos.y < -200 ? 160 : -180;
-  const bubbleTriangle = pos.y < -200 ? "bottom" : "top";
+  const isUpperScreen = (60 + pos.y) < 33; // 画面の上1/3以内にいるか
+  const bubbleOffsetY = isUpperScreen ? 160 : -180;
+  const bubbleTriangle = isUpperScreen ? "bottom" : "top";
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-end bg-gradient-to-t from-pink-50/70 to-white pb-10 overflow-hidden select-none relative">
@@ -115,14 +95,14 @@ export default function Home() {
             transform: "translateX(-50%)",
           }}
         >
-          <SpeechBubble text={text} mood={mood} triangle={bubbleTriangle} />
+          <SpeechBubble text={text} mood={mood} triangle={bubbleTriangle} offsetX={pos.x} />
         </div>
       )}
       <div
         ref={avatarRef}
         className={`transition-transform duration-300 ease-linear ${animClass}`}
         style={{
-          transform: `translate(${pos.x}px, ${pos.y}px)`,
+          transform: `translate(${pos.x}px, ${pos.y}px)`
         }}
       >
         <HiyoriAvatar onTap={handleTap} onSlide={handleSlide} />
