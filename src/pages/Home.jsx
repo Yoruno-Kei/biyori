@@ -101,6 +101,9 @@ export default function Home() {
     }
   };
 
+  const bubbleOffsetY = pos.y < -200 ? 160 : -180;
+  const bubbleTriangle = pos.y < -200 ? "bottom" : "top";
+
   return (
     <div className="min-h-screen flex flex-col items-center justify-end bg-gradient-to-t from-pink-50/70 to-white pb-10 overflow-hidden select-none relative">
       {showBubble && (
@@ -108,11 +111,11 @@ export default function Home() {
           className="absolute z-10 w-screen max-w-full px-4"
           style={{
             left: `calc(50% + ${pos.x}px)`,
-            top: `calc(60% + ${pos.y}px - 180px)`,
+            top: `calc(60% + ${pos.y}px + ${bubbleOffsetY}px)`,
             transform: "translateX(-50%)",
           }}
         >
-          <SpeechBubble text={text} mood={mood} />
+          <SpeechBubble text={text} mood={mood} triangle={bubbleTriangle} />
         </div>
       )}
       <div
