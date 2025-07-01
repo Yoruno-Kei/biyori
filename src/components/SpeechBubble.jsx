@@ -1,7 +1,11 @@
-// components/SpeechBubble.jsx
 import React from "react";
 
-export default function SpeechBubble({ text, mood = "normal", positionY = 0, positionX = 0 }) {
+export default function SpeechBubble({
+  text,
+  mood = "normal",
+  positionY = 0,
+  positionX = 0,
+}) {
   if (!text) return null;
 
   const base =
@@ -14,18 +18,23 @@ export default function SpeechBubble({ text, mood = "normal", positionY = 0, pos
     sleep: "bg-blue-50 border-2 border-blue-200",
   }[mood] || "bg-white/80 border-2 border-pink-200";
 
-  const isBottom = positionY < window.innerHeight * 0.33;
+  // 安全な高さチェック（SSR対策）
+  const isBottom =
+    typeof window !== "undefined"
+      ? positionY < window.innerHeight * 0.33
+      : false;
 
   return (
     <div
       className={`${base} ${moodColor}`}
       style={{
-        left: `calc(${positionX}px - min(45vw, 160px))`,
-        top: isBottom ? `${positionY + 120}px` : `${positionY - 150}px`,
+        top: isBottom ? `${positionY + 100}px` : `${positionY - 140}px`,
+        left: `max(8px, min(${positionX - 80}px, calc(100vw - 160px)))`,
       }}
     >
       <span>{text}</span>
-      {/* しっぽ */}
+
+      {/* しっぽ（三角） */}
       <span
         className="absolute w-5 h-5 bg-inherit border-inherit"
         style={{
@@ -37,7 +46,8 @@ export default function SpeechBubble({ text, mood = "normal", positionY = 0, pos
           borderBottomWidth: 2,
         }}
       />
-      {/* ハート */}
+
+      {/* ハートマーク（アニメ） */}
       <span className="absolute -right-3 -top-3 animate-bounce">
         <svg width="24" height="24" viewBox="0 0 28 28">
           <path

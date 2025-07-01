@@ -15,24 +15,9 @@ export default function Home() {
   const [pos, setPos] = useState({ x: 0, y: 0 });
   const [animClass, setAnimClass] = useState("");
   const [isRequesting, setIsRequesting] = useState(false);
-  const [lastLiftTime, setLastLiftTime] = useState(0); // 🔸 クールタイム用
+  const [lastLiftTime, setLastLiftTime] = useState(0);
 
-  const dragStart = useRef(null);
-
-  // アバターの待機ちょこちょこ移動（10秒に1回）
-  useEffect(() => {
-    const timer = setInterval(() => {
-      if (!animClass) {
-        setPos({
-          x: Math.random() * 20 - 10,
-          y: 0,
-        });
-      }
-    }, 10000);
-    return () => clearInterval(timer);
-  }, [animClass]);
-
-  // Gemini API に台詞生成を依頼
+  // Gemini にリクエスト
   const speak = async (situation) => {
     if (isRequesting) return;
     setIsRequesting(true);
@@ -47,32 +32,30 @@ export default function Home() {
     }, Math.max(2500, serifu.length * 80));
   };
 
-  // 固定セリフ（持ち上げ時など）＋クールタイム
+  // 固定セリフ
   const speakFixedLine = (lines, mood = "normal") => {
     const now = Date.now();
-    if (now - lastLiftTime < 4000 || isRequesting) return; // 🔸 4秒以内の再発声防止
+    if (now - lastLiftTime < 4000 || isRequesting) return;
     setLastLiftTime(now);
 
     const serifu = lines[Math.floor(Math.random() * lines.length)];
     setText(serifu);
     setMood(mood);
     setShowBubble(true);
-    setTimeout(() => {
-      setShowBubble(false);
-    }, Math.max(2500, serifu.length * 80));
+    setTimeout(() => setShowBubble(false), Math.max(2500, serifu.length * 80));
   };
 
-  // 5分放置で眠気セリフ
-  useIdleMonitor(() => speak("sleep"), 600000); // 🔸10分（ミリ秒）
+  // 放置でセリフ
+  useIdleMonitor(() => speak("sleep"), 600000); // 10分
 
-  // タップで嬉しい反応
+  // タップ時
   const handleTap = () => {
     setAnimClass("animate-bounce-fast");
     speak("happy");
     setTimeout(() => setAnimClass(""), 700);
   };
 
-  // スライドで警告反応
+  // スライド時
   const handleSlide = ({ dx, dy }) => {
     setAnimClass("brightness-110 scale-105");
     setPos({ x: dx, y: dy });
@@ -86,13 +69,22 @@ export default function Home() {
     }, 600);
   };
 
-  // 位置の同期
+  // アバターの座標更新
   const handlePosUpdate = ({ x, y }) => {
     setPos({ x, y });
   };
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-end bg-gradient-to-t from-pink-50/70 to-white pb-10 overflow-hidden">
+      <Ground />
+      <div className={`${animClass}`}>
+        <HiyoriAvatar
+          onTap={handleTap}
+          onSlide={handleSlide}
+          onLifted={() => speakFixedLine(liftLines, "warning")}
+          onPosUpdate={handlePosUpdate}
+        />
+      </div>
       {showBubble && (
         <SpeechBubble
           text={text}
@@ -101,16 +93,6 @@ export default function Home() {
           positionY={pos.y}
         />
       )}
-            <Ground />
-      <div className={`transition-transform duration-700 ${animClass}`}>
-        <HiyoriAvatar
-          onTap={handleTap}
-          onSlide={handleSlide}
-          onLifted={() => speakFixedLine(liftLines, "warning")}
-          onPosUpdate={handlePosUpdate}
-        />
-        
-      </div>
     </div>
   );
 }

@@ -8,25 +8,26 @@ export async function fetchHiyoriLine(prompt) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         contents: [{ role: "user", parts: [{ text: prompt }] }]
-      })
+      }),
     });
 
-    if (!response.ok) return null;
+    if (!response.ok) {
+      console.warn(`[${modelName}] failed with status ${response.status}`);
+      return null;
+    }
+
     const result = await response.json();
     return result?.candidates?.[0]?.content?.parts?.[0]?.text ?? null;
   };
 
-  // 2.5-flashを最大3回試す
-  for (let i = 0; i < 3; i++) {
-    const result = await tryModel("gemini-2.5-flash");
-    if (result) return result;
-    console.warn(`2.5-flash attempt ${i + 1} failed.`);
-  }
+  // まず 2.5-flash を試す
+  const result2_5 = await tryModel("gemini-2.5-flash");
+  if (result2_5) return result2_5;
 
-  // 最後に2.0-flashを試す
-  const fallback = await tryModel("gemini-2.0-flash");
-  if (fallback) return fallback;
+  // 次に 2.0-flash を試す
+  const result2_0 = await tryModel("gemini-2.0-flash");
+  if (result2_0) return result2_0;
 
-  // どちらも失敗した場合
+  // 両方失敗したらダミー返答
   return "……（ひよりはちょっと黙っているみたいです）";
 }

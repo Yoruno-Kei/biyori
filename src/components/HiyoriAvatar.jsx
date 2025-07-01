@@ -1,108 +1,119 @@
-// HiyoriAvatar.jsx
 import React, { useEffect, useRef } from "react";
 
-export default function HiyoriAvatar({ onTap, onSlide, onLifted, onPosUpdate }) {
+export default function HiyoriAvatar({ onTap, onLifted, onPosUpdate }) {
   const avatarRef = useRef(null);
-  const touchStart = useRef(null);
   const pos = useRef({ x: 0, y: 0 });
   const isDragging = useRef(false);
+  const dragOffset = useRef({ x: 0, y: 0 });
   const requestRef = useRef(null);
-  const GROUND_Y = window.innerHeight - 96; // h-24の高さに合わせる
 
-  // 初期位置: 画面下部中央
+  const touchStartTime = useRef(0);
+  const touchStartPos = useRef({ x: 0, y: 0 });
+
+  const swingAngle = useRef(0);
+  const swingDir = useRef(1);
+  const isFalling = useRef(false);
+  const dropVelocity = useRef(0);
+
+  const GROUND_Y = 0;
+
   useEffect(() => {
-    onPosUpdate?.({ x: window.innerWidth / 2, y: GROUND_Y });
+    requestRef.current = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(requestRef.current);
   }, []);
+
+  const updatePosition = () => {
+    const el = avatarRef.current;
+    if (!el || !onPosUpdate) return;
+    const rect = el.getBoundingClientRect();
+    onPosUpdate({
+      x: rect.left + rect.width / 2,
+      y: rect.top + rect.height / 2,
+    });
+  };
 
   const animate = () => {
     const el = avatarRef.current;
     if (!el) return;
 
-    // 回転や位置の更新
-    el.style.transform = `translate(${pos.current.x}px, ${pos.current.y}px) rotate(${isDragging.current ? 90 : 0}deg)`;
+    if (isDragging.current) {
+      swingAngle.current = Math.sin(Date.now() / 200) * 5;
+    } else {
+      swingAngle.current *= 0.9;
+    }
 
-    // 吹き出し表示位置更新用
-    const rect = el.getBoundingClientRect();
-    onPosUpdate?.({
-      x: rect.left + rect.width / 2,
-      y: rect.top,
-    });
+    if (isFalling.current) {
+      dropVelocity.current += 1.2;
+      pos.current.y += dropVelocity.current;
 
+      if (pos.current.y >= GROUND_Y) {
+        pos.current.y = GROUND_Y;
+        if (Math.abs(dropVelocity.current) > 4) {
+          dropVelocity.current *= -0.3;
+        } else {
+          dropVelocity.current = 0;
+          isFalling.current = false;
+        }
+      }
+    }
+
+    el.style.transform = `translate(${pos.current.x}px, ${pos.current.y}px) rotate(${swingAngle.current}deg)`;
+    updatePosition();
     requestRef.current = requestAnimationFrame(animate);
   };
 
   const handleTouchStart = (e) => {
     const t = e.touches[0];
-    touchStart.current = { x: t.clientX, y: t.clientY };
+    const el = avatarRef.current;
+    if (!el) return;
+
+    const rect = el.getBoundingClientRect();
+    dragOffset.current = {
+      x: t.clientX - (rect.left + rect.width / 2),
+      y: t.clientY - (rect.top + rect.height * 0.7),
+    };
+
+    touchStartTime.current = Date.now();
+    touchStartPos.current = { x: t.clientX, y: t.clientY };
     isDragging.current = true;
-    onLifted?.(); // 持ち上げ発話
-    requestRef.current = requestAnimationFrame(animate);
+    isFalling.current = false;
+    dropVelocity.current = 0;
   };
 
   const handleTouchMove = (e) => {
-    if (!isDragging.current || !touchStart.current) return;
+    if (!isDragging.current) return;
     const t = e.touches[0];
-    const dx = t.clientX - touchStart.current.x;
-    const dy = t.clientY - touchStart.current.y;
 
-    pos.current.x = dx;
-
-    // 地面より下に行かせない
-    const el = avatarRef.current;
-    if (el) {
-      const newTop = el.offsetTop + dy;
-      const maxY = GROUND_Y - el.offsetHeight;
-      pos.current.y = Math.min(dy, maxY - el.offsetTop);
-    }
+    const baseGround = window.innerHeight - 96;
+    pos.current.x = t.clientX - window.innerWidth / 2 - dragOffset.current.x;
+    pos.current.y = t.clientY - baseGround - dragOffset.current.y;
   };
 
-  const handleTouchEnd = () => {
-    if (!isDragging.current) return;
+  const handleTouchEnd = (e) => {
+    const elapsed = Date.now() - touchStartTime.current;
+    const movedX = Math.abs(touchStartPos.current.x - e.changedTouches[0].clientX);
+    const movedY = Math.abs(touchStartPos.current.y - e.changedTouches[0].clientY);
+    const isTap = elapsed < 200 && movedX < 10 && movedY < 10;
 
-    cancelAnimationFrame(requestRef.current);
+    if (isTap) {
+      onTap?.(); // タップとして処理
+    } else {
+      onLifted?.(); // ドラッグして離した時の処理
+    }
+
     isDragging.current = false;
-
-    const duration = 400;
-    const steps = 20;
-    const startX = pos.current.x;
-    const startY = pos.current.y;
-    let currentStep = 0;
-
-    const animateBack = () => {
-      currentStep++;
-      const progress = currentStep / steps;
-      pos.current.x = startX * (1 - progress);
-      pos.current.y = startY * (1 - progress);
-
-      const el = avatarRef.current;
-      if (el) {
-        el.style.transform = `translate(${pos.current.x}px, ${pos.current.y}px) rotate(0deg)`;
-        const rect = el.getBoundingClientRect();
-        onPosUpdate?.({
-          x: rect.left + rect.width / 2,
-          y: rect.top,
-        });
-      }
-
-      if (currentStep < steps) {
-        requestAnimationFrame(animateBack);
-      }
-    };
-    animateBack();
-    touchStart.current = null;
+    isFalling.current = true;
+    dropVelocity.current = 0;
   };
 
   return (
     <div
-      className="w-[50vw] max-w-xs mx-auto select-none transition-transform duration-300"
+      className="fixed left-1/2 bottom-24 w-[50vw] max-w-xs select-none z-10"
       ref={avatarRef}
-      style={{ touchAction: "manipulation" }}
+      style={{ transform: "translate(0, 0)", touchAction: "none" }}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
-      onClick={() => {
-        if (!isDragging.current) onTap?.();
-      }}
     >
       <img
         src="/biyori/images/Hiyori_idle.png"
