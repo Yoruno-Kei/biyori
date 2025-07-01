@@ -66,60 +66,64 @@ export default function HiyoriAvatar({ onTap, onLifted, onPosUpdate }) {
     requestRef.current = requestAnimationFrame(animate);
   };
 
-  const handleTouchStart = (e) => {
-    const t = e.touches[0];
-    const el = avatarRef.current;
-    if (!el) return;
+const handleTouchStart = (e) => {
+  const t = e.touches[0];
+  const el = avatarRef.current;
+  if (!el) return;
 
-    const rect = el.getBoundingClientRect();
-    dragOffset.current = {
-      x: t.clientX - (rect.left + rect.width * 0.1),
-      y: t.clientY - (rect.top + rect.height * 1.5),
-    };
-
-    touchStartTime.current = Date.now();
-    touchStartPos.current = { x: t.clientX, y: t.clientY };
-    isDragging.current = true;
-    isFalling.current = false;
-    dropVelocity.current = 0;
+  const rect = el.getBoundingClientRect();
+  dragOffset.current = {
+    x: t.clientX - (rect.left + rect.width * 0.1),
+    y: t.clientY - (rect.top + rect.height * 1.5),
   };
 
-  const handleTouchMove = (e) => {
+  touchStartTime.current = Date.now();
+  touchStartPos.current = { x: t.clientX, y: t.clientY };
+  isDragging.current = true;
+  isFalling.current = false;
+  dropVelocity.current = 0;
+  hasLifted.current = false; // 🔸毎回初期化！
+};
+
+const handleTouchMove = (e) => {
   if (!isDragging.current) return;
   const t = e.touches[0];
 
   const movedX = Math.abs(t.clientX - touchStartPos.current.x);
   const movedY = Math.abs(t.clientY - touchStartPos.current.y);
 
-  // 一定距離を超えたらドラッグ開始と判定し、onLiftedを呼ぶ
   if (!hasLifted.current && (movedX > 10 || movedY > 10)) {
     hasLifted.current = true;
     onLifted?.();
   }
 
   const baseGround = window.innerHeight - 96;
-  pos.current.x = t.clientX - window.innerWidth / 2 - dragOffset.current.x;
-  pos.current.y = t.clientY - baseGround - dragOffset.current.y;
+  const newX = t.clientX - window.innerWidth / 2 - dragOffset.current.x;
+  let newY = t.clientY - baseGround - dragOffset.current.y;
+
+  // 🔸 地面より下にいかないよう制限（最低でも 0 ）
+  if (newY > 0) newY = 0;
+
+  pos.current.x = newX;
+  pos.current.y = newY;
 };
 
 
-  const handleTouchEnd = (e) => {
-    const elapsed = Date.now() - touchStartTime.current;
-    const movedX = Math.abs(touchStartPos.current.x - e.changedTouches[0].clientX);
-    const movedY = Math.abs(touchStartPos.current.y - e.changedTouches[0].clientY);
-    const isTap = elapsed < 200 && movedX < 10 && movedY < 10;
+const handleTouchEnd = (e) => {
+  const elapsed = Date.now() - touchStartTime.current;
+  const movedX = Math.abs(touchStartPos.current.x - e.changedTouches[0].clientX);
+  const movedY = Math.abs(touchStartPos.current.y - e.changedTouches[0].clientY);
+  const isTap = elapsed < 200 && movedX < 10 && movedY < 10;
 
-    if (isTap) {
-      onTap?.();
-    } else {
-      onLifted?.();
-    }
+  if (isTap) {
+    onTap?.(); // タップ処理
+  }
 
-    isDragging.current = false;
-    isFalling.current = true;
-    dropVelocity.current = 0;
-  };
-
+  // 🔸ドラッグ済みなら onLifted はもう呼ばない
+  isDragging.current = false;
+  isFalling.current = true;
+  dropVelocity.current = 0;
+};
   return (
     <div
       className="fixed left-1/2 bottom-24 w-[50vw] max-w-xs select-none z-10"
