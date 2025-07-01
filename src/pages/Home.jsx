@@ -87,24 +87,20 @@ export default function Home() {
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-gradient-to-t from-pink-50/70 to-white">
+      {/* 地面 */}
       <Ground />
+
+      {/* 吹き出し */}
       {showBubble && (
-        <div
-          className="absolute z-10 w-screen max-w-full px-4"
-          style={{
-            left: `calc(50% + ${pos.x}px)`,
-            top: `calc(60% + ${pos.y}px + ${bubbleOffsetY}px)`,
-            transform: "translateX(-50%)",
-          }}
-        >
-          <SpeechBubble text={text} mood={mood} triangle={bubbleTriangle} offsetX={pos.x} />
-        </div>
+        <SpeechBubble text={text} mood={mood} charY={pos.y} charX={pos.x} />
       )}
+
+      {/* アバター */}
       <div
-        ref={avatarRef}
-        className={`transition-transform duration-300 ease-linear ${animClass}`}
+        className={`absolute bottom-[6rem] left-1/2 transition-transform duration-700 ${animClass}`}
         style={{
-          transform: `translate(${pos.x}px, ${pos.y}px)`
+          transform: `translateX(calc(-50% + ${pos.x}px)) translateY(${-pos.y}px)`,
+          zIndex: 10,
         }}
       >
         <HiyoriAvatar onTap={handleTap} onSlide={handleSlide} />

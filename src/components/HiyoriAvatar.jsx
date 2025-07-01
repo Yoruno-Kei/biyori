@@ -1,33 +1,26 @@
 // components/HiyoriAvatar.jsx
-import React, { useRef, useState, useEffect } from "react";
+import React, { useRef, useState } from "react";
 
-const cuteProtestLines = [
-  "やめてぇ～っ！落ちるぅぅ～！",
-  "うわああ、ご主人ひどいですっ！",
-  "ぐるぐるぐるぅ～……もうっ！",
-  "うええぇぇ、目が回るぅ……！"
+const DRAG_VOICES = [
+  "わわっ、ご主人さま〜！？",
+  "ひゃっ、や、やめてください〜っ……！",
+  "う、浮いてるんですけど！？",
+  "く、くすぐったいです……っ！"
 ];
 
 export default function HiyoriAvatar({ onTap, onSlide }) {
   const touchStart = useRef(null);
   const [isDragging, setIsDragging] = useState(false);
   const [rotation, setRotation] = useState(0);
-  const [posX, setPosX] = useState(window.innerWidth / 2);
-  const [posY, setPosY] = useState(0);
-  const [lineOverride, setLineOverride] = useState("");
-
-  useEffect(() => {
-    const handleResize = () => {
-      setPosX(window.innerWidth / 2);
-    };
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
+  const [lastVoiceTime, setLastVoiceTime] = useState(0);
 
   const handleTouchStart = (e) => {
     const t = e.touches[0];
-    const bounds = e.currentTarget.getBoundingClientRect();
-    touchStart.current = { x: t.clientX, y: t.clientY, time: Date.now() };
+    touchStart.current = {
+      x: t.clientX,
+      y: t.clientY,
+      time: Date.now(),
+    };
     setIsDragging(true);
   };
 
@@ -36,18 +29,18 @@ export default function HiyoriAvatar({ onTap, onSlide }) {
     const t = e.touches[0];
     const dx = t.clientX - touchStart.current.x;
     const dy = t.clientY - touchStart.current.y;
-    const screenWidth = window.innerWidth;
-    let newX = (posX + dx) % screenWidth;
-    if (newX < 0) newX += screenWidth;
-
-    setPosX(newX);
-    setPosY(-60); // 持ち上げ中の位置
-    setRotation(90);
-
-    const randomLine = cuteProtestLines[Math.floor(Math.random() * cuteProtestLines.length)];
-    setLineOverride(randomLine);
-
+    const angle = Math.max(-20, Math.min(20, dx / 3));
+    setRotation(angle);
     onSlide?.({ dx, dy, isDragging: true });
+
+    const now = Date.now();
+    if (now - lastVoiceTime > 2500) {
+      const voice = DRAG_VOICES[Math.floor(Math.random() * DRAG_VOICES.length)];
+      const utter = new SpeechSynthesisUtterance(voice);
+      utter.lang = "ja-JP";
+      window.speechSynthesis.speak(utter);
+      setLastVoiceTime(now);
+    }
   };
 
   const handleTouchEnd = (e) => {
@@ -65,18 +58,13 @@ export default function HiyoriAvatar({ onTap, onSlide }) {
 
     setIsDragging(false);
     setRotation(0);
-    setPosY(0); // 地面に戻る
-    setLineOverride("");
     touchStart.current = null;
   };
 
   return (
     <div
-      className="w-[50vw] max-w-xs mx-auto select-none touch-manipulation absolute bottom-0"
-      style={{
-        touchAction: "manipulation",
-        transform: `translateX(${posX - window.innerWidth / 2}px) translateY(${posY}px) rotate(${rotation}deg)`
-      }}
+      className="w-[50vw] max-w-xs mx-auto select-none touch-manipulation"
+      style={{ touchAction: "manipulation" }}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
@@ -85,14 +73,10 @@ export default function HiyoriAvatar({ onTap, onSlide }) {
       <img
         src="/biyori/images/Hiyori_idle.png"
         alt="ひより"
-        className="w-full h-auto drop-shadow-lg pointer-events-auto transition-transform duration-200 ease-in-out"
+        className="w-full h-auto drop-shadow-lg pointer-events-auto transition-transform duration-100 ease-in-out"
+        style={{ transform: `rotate(${rotation}deg)` }}
         draggable={false}
       />
-      {lineOverride && (
-        <div className="absolute -top-16 left-1/2 -translate-x-1/2 bg-white border border-pink-300 rounded-xl px-4 py-2 text-sm shadow-md">
-          {lineOverride}
-        </div>
-      )}
     </div>
   );
 }
