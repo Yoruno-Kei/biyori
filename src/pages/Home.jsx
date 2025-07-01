@@ -5,6 +5,7 @@ import HiyoriAvatar from "../components/HiyoriAvatar";
 import { fetchHiyoriLine } from "../api/GeminiClient";
 import { generateHiyoriPrompt } from "../utils/GeminiPrompt";
 import useIdleMonitor from "../hooks/useIdleMonitor";
+import Ground from "../components/Ground";
 
 export default function Home() {
   const [text, setText] = useState("");
@@ -85,7 +86,8 @@ export default function Home() {
   const bubbleTriangle = isUpperScreen ? "bottom" : "top";
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-end bg-gradient-to-t from-pink-50/70 to-white pb-10 overflow-hidden select-none relative">
+    <div className="relative min-h-screen overflow-hidden bg-gradient-to-t from-pink-50/70 to-white">
+      <Ground />
       {showBubble && (
         <div
           className="absolute z-10 w-screen max-w-full px-4"

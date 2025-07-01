@@ -1,7 +1,7 @@
 // src/hooks/useIdleMonitor.js
 import { useEffect } from "react";
 
-export default function useIdleMonitor(callback, timeout = 5 * 60 * 1000) {
+export default function useIdleMonitor(callback, timeout = 10 * 60 * 1000) {
   useEffect(() => {
     let timer = setTimeout(callback, timeout);
 
