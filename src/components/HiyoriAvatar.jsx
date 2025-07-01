@@ -1,112 +1,104 @@
-import React, { useState, useEffect, useRef } from "react";
-import SpeechBubble from "../components/SpeechBubble";
-import HiyoriAvatar from "../components/HiyoriAvatar";
-import { fetchHiyoriLine } from "../api/GeminiClient";
-import { generateHiyoriPrompt } from "../utils/GeminiPrompt";
-import { liftLines } from "../utils/speechPresets";
-import useIdleMonitor from "../hooks/useIdleMonitor";
+import React, { useEffect, useRef } from "react";
 
-export default function Home() {
-  const [text, setText] = useState("");
-  const [showBubble, setShowBubble] = useState(false);
-  const [mood, setMood] = useState("normal");
-  const [pos, setPos] = useState({ x: 0, y: 0 });
-  const [animClass, setAnimClass] = useState("");
-  const [isRequesting, setIsRequesting] = useState(false);
-  const [lastLiftTime, setLastLiftTime] = useState(0); // 🔸 クールタイム用
+export default function HiyoriAvatar({ onTap, onSlide, onLifted, onPosUpdate }) {
+  const avatarRef = useRef(null);
+  const touchStart = useRef(null);
+  const pos = useRef({ x: 0, y: 0 });
+  const isDragging = useRef(false);
+  const requestRef = useRef(null);
 
-  const dragStart = useRef(null);
-
-  // アバターの待機ちょこちょこ移動（10秒に1回）
+  // 初期化: 中央に配置
   useEffect(() => {
-    const timer = setInterval(() => {
-      if (!animClass) {
-        setPos({
-          x: Math.random() * 20 - 10,
-          y: 0,
+    onPosUpdate?.({ x: window.innerWidth / 2, y: window.innerHeight - 180 });
+  }, []);
+
+  const animate = () => {
+    const el = avatarRef.current;
+    if (!el) return;
+
+    el.style.transform = `translate(${pos.current.x}px, ${pos.current.y}px) rotate(${isDragging.current ? 90 : 0}deg)`;
+    onPosUpdate?.({
+      x: el.getBoundingClientRect().left + el.offsetWidth / 2,
+      y: el.getBoundingClientRect().top + el.offsetHeight / 2,
+    });
+
+    requestRef.current = requestAnimationFrame(animate);
+  };
+
+  const handleTouchStart = (e) => {
+    const t = e.touches[0];
+    const rect = avatarRef.current.getBoundingClientRect();
+
+    touchStart.current = { x: t.clientX, y: t.clientY };
+    isDragging.current = true;
+    onLifted?.(); // 🔸持ち上げられた
+    requestRef.current = requestAnimationFrame(animate);
+  };
+
+  const handleTouchMove = (e) => {
+    if (!isDragging.current || !touchStart.current) return;
+    const t = e.touches[0];
+    const dx = t.clientX - touchStart.current.x;
+    const dy = t.clientY - touchStart.current.y;
+    pos.current.x = dx;
+    pos.current.y = Math.min(dy, 0); // 🔸下には行かせない
+  };
+
+  const handleTouchEnd = (e) => {
+    if (!isDragging.current) return;
+
+    cancelAnimationFrame(requestRef.current);
+    isDragging.current = false;
+
+    // 緩やかに元に戻る
+    const duration = 400;
+    const steps = 20;
+    const startX = pos.current.x;
+    const startY = pos.current.y;
+    let currentStep = 0;
+
+    const animateBack = () => {
+      currentStep++;
+      const progress = currentStep / steps;
+      pos.current.x = startX * (1 - progress);
+      pos.current.y = startY * (1 - progress);
+
+      const el = avatarRef.current;
+      if (el) {
+        el.style.transform = `translate(${pos.current.x}px, ${pos.current.y}px) rotate(0deg)`;
+        onPosUpdate?.({
+          x: el.getBoundingClientRect().left + el.offsetWidth / 2,
+          y: el.getBoundingClientRect().top + el.offsetHeight / 2,
         });
       }
-    }, 10000);
-    return () => clearInterval(timer);
-  }, [animClass]);
 
-  // Gemini API に台詞生成を依頼
-  const speak = async (situation) => {
-    if (isRequesting) return;
-    setIsRequesting(true);
-    setMood(situation);
-    const prompt = generateHiyoriPrompt({ situation });
-    const serifu = await fetchHiyoriLine(prompt);
-    setText(serifu.replace(/^「|」$/g, ""));
-    setShowBubble(true);
-    setTimeout(() => {
-      setShowBubble(false);
-      setIsRequesting(false);
-    }, Math.max(2500, serifu.length * 80));
-  };
+      if (currentStep < steps) {
+        requestAnimationFrame(animateBack);
+      }
+    };
+    animateBack();
 
-  // 固定セリフ（持ち上げ時など）＋クールタイム
-  const speakFixedLine = (lines, mood = "normal") => {
-    const now = Date.now();
-    if (now - lastLiftTime < 4000 || isRequesting) return; // 🔸 4秒以内の再発声防止
-    setLastLiftTime(now);
-
-    const serifu = lines[Math.floor(Math.random() * lines.length)];
-    setText(serifu);
-    setMood(mood);
-    setShowBubble(true);
-    setTimeout(() => {
-      setShowBubble(false);
-    }, Math.max(2500, serifu.length * 80));
-  };
-
-  // 5分放置で眠気セリフ
-  useIdleMonitor(() => speak("sleep"), 600000); // 🔸10分（ミリ秒）
-
-  // タップで嬉しい反応
-  const handleTap = () => {
-    setAnimClass("animate-bounce-fast");
-    speak("happy");
-    setTimeout(() => setAnimClass(""), 700);
-  };
-
-  // スライドで警告反応
-  const handleSlide = ({ dx, dy }) => {
-    setAnimClass("brightness-110 scale-105");
-    setPos({ x: dx, y: dy });
-    speak("warning");
-    setTimeout(() => {
-      setAnimClass("animate-drop");
-      setTimeout(() => {
-        setPos({ x: 0, y: 0 });
-        setAnimClass("");
-      }, 500);
-    }, 600);
-  };
-
-  // 位置の同期
-  const handlePosUpdate = ({ x, y }) => {
-    setPos({ x, y });
+    touchStart.current = null;
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-end bg-gradient-to-t from-pink-50/70 to-white pb-10 overflow-hidden">
-      {showBubble && (
-        <SpeechBubble
-          text={text}
-          mood={mood}
-          positionX={pos.x}
-          positionY={pos.y}
-        />
-      )}
-      <div className={`transition-transform duration-700 ${animClass}`}>
-        <HiyoriAvatar
-          onTap={handleTap}
-          onSlide={handleSlide}
-          onLifted={() => speakFixedLine(liftLines, "warning")}
-          onPosUpdate={handlePosUpdate}
-        />
-      </div>
+    <div
+      className="w-[50vw] max-w-xs mx-auto select-none transition-transform duration-300"
+      ref={avatarRef}
+      style={{ touchAction: "manipulation" }}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+      onClick={() => {
+        if (!isDragging.current) onTap?.();
+      }}
+    >
+      <img
+        src="/biyori/images/Hiyori_idle.png"
+        alt="ひより"
+        className="w-full h-auto drop-shadow-md pointer-events-auto select-none"
+        draggable={false}
+      />
     </div>
   );
 }

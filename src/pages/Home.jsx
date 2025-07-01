@@ -1,4 +1,3 @@
-// Home.jsx
 import React, { useState, useEffect, useRef } from "react";
 import SpeechBubble from "../components/SpeechBubble";
 import HiyoriAvatar from "../components/HiyoriAvatar";
@@ -14,8 +13,11 @@ export default function Home() {
   const [pos, setPos] = useState({ x: 0, y: 0 });
   const [animClass, setAnimClass] = useState("");
   const [isRequesting, setIsRequesting] = useState(false);
+  const [lastLiftTime, setLastLiftTime] = useState(0); // 🔸 クールタイム用
+
   const dragStart = useRef(null);
 
+  // アバターの待機ちょこちょこ移動（10秒に1回）
   useEffect(() => {
     const timer = setInterval(() => {
       if (!animClass) {
@@ -24,10 +26,11 @@ export default function Home() {
           y: 0,
         });
       }
-    }, 10000); // ちょこちょこ移動 10秒間隔
+    }, 10000);
     return () => clearInterval(timer);
   }, [animClass]);
 
+  // Gemini API に台詞生成を依頼
   const speak = async (situation) => {
     if (isRequesting) return;
     setIsRequesting(true);
@@ -42,9 +45,12 @@ export default function Home() {
     }, Math.max(2500, serifu.length * 80));
   };
 
-  // 固定セリフ（持ち上げ時）
+  // 固定セリフ（持ち上げ時など）＋クールタイム
   const speakFixedLine = (lines, mood = "normal") => {
-    if (isRequesting) return;
+    const now = Date.now();
+    if (now - lastLiftTime < 4000 || isRequesting) return; // 🔸 4秒以内の再発声防止
+    setLastLiftTime(now);
+
     const serifu = lines[Math.floor(Math.random() * lines.length)];
     setText(serifu);
     setMood(mood);
@@ -54,14 +60,17 @@ export default function Home() {
     }, Math.max(2500, serifu.length * 80));
   };
 
-  useIdleMonitor(() => speak("sleep"));
+  // 5分放置で眠気セリフ
+  useIdleMonitor(() => speak("sleep"), 600000); // 🔸10分（ミリ秒）
 
+  // タップで嬉しい反応
   const handleTap = () => {
     setAnimClass("animate-bounce-fast");
     speak("happy");
     setTimeout(() => setAnimClass(""), 700);
   };
 
+  // スライドで警告反応
   const handleSlide = ({ dx, dy }) => {
     setAnimClass("brightness-110 scale-105");
     setPos({ x: dx, y: dy });
@@ -75,6 +84,7 @@ export default function Home() {
     }, 600);
   };
 
+  // 位置の同期
   const handlePosUpdate = ({ x, y }) => {
     setPos({ x, y });
   };
@@ -82,7 +92,12 @@ export default function Home() {
   return (
     <div className="min-h-screen flex flex-col items-center justify-end bg-gradient-to-t from-pink-50/70 to-white pb-10 overflow-hidden">
       {showBubble && (
-        <SpeechBubble text={text} mood={mood} positionX={pos.x} positionY={pos.y} />
+        <SpeechBubble
+          text={text}
+          mood={mood}
+          positionX={pos.x}
+          positionY={pos.y}
+        />
       )}
       <div className={`transition-transform duration-700 ${animClass}`}>
         <HiyoriAvatar
