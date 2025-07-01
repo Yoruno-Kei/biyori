@@ -1,3 +1,4 @@
+// Home.jsx
 import React, { useState, useEffect, useRef } from "react";
 import SpeechBubble from "../components/SpeechBubble";
 import HiyoriAvatar from "../components/HiyoriAvatar";
