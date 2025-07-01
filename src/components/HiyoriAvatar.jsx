@@ -8,11 +8,14 @@ const DRAG_VOICES = [
   "く、くすぐったいです……っ！"
 ];
 
+const FLOOR_Y = 0; // 地面位置（後でprops化も可）
+
 export default function HiyoriAvatar({ onTap, onSlide }) {
   const touchStart = useRef(null);
   const [isDragging, setIsDragging] = useState(false);
   const [rotation, setRotation] = useState(0);
   const [lastVoiceTime, setLastVoiceTime] = useState(0);
+  const [offset, setOffset] = useState({ x: 0, y: FLOOR_Y });
 
   const handleTouchStart = (e) => {
     const t = e.touches[0];
@@ -31,6 +34,7 @@ export default function HiyoriAvatar({ onTap, onSlide }) {
     const dy = t.clientY - touchStart.current.y;
     const angle = Math.max(-20, Math.min(20, dx / 3));
     setRotation(angle);
+    setOffset({ x: dx, y: Math.min(dy, 0) }); // 下方向制限
     onSlide?.({ dx, dy, isDragging: true });
 
     const now = Date.now();
@@ -58,13 +62,18 @@ export default function HiyoriAvatar({ onTap, onSlide }) {
 
     setIsDragging(false);
     setRotation(0);
+    setOffset({ x: 0, y: FLOOR_Y });
     touchStart.current = null;
   };
 
   return (
     <div
       className="w-[50vw] max-w-xs mx-auto select-none touch-manipulation"
-      style={{ touchAction: "manipulation" }}
+      style={{
+        touchAction: "manipulation",
+        transform: `translate(${offset.x}px, ${offset.y}px) rotate(${rotation}deg)`,
+        transition: isDragging ? "none" : "transform 0.3s ease-out",
+      }}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
@@ -73,8 +82,7 @@ export default function HiyoriAvatar({ onTap, onSlide }) {
       <img
         src="/biyori/images/Hiyori_idle.png"
         alt="ひより"
-        className="w-full h-auto drop-shadow-lg pointer-events-auto transition-transform duration-100 ease-in-out"
-        style={{ transform: `rotate(${rotation}deg)` }}
+        className="w-full h-auto drop-shadow-lg pointer-events-auto"
         draggable={false}
       />
     </div>
