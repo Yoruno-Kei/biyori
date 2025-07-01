@@ -120,10 +120,14 @@ const handleTouchMove = (e) => {
   pos.current.x = newX;
   pos.current.y = newY;
 
-  onPosUpdate?.({
-    x: t.clientX, // or rect.left + rect.width / 2 if precise face tracking
-    y: t.clientY - 100, // 顔の中心 or 任意オフセット
-  });
+  const el = avatarRef.current;
+  if (el) {
+    const rect = el.getBoundingClientRect();
+    onPosUpdate?.({
+      x: rect.left + rect.width / 2,      // 顔のX座標
+      y: rect.top + rect.height * 0.2,    // 顔のY座標（眉〜頭頂あたり）
+    });
+  }
 };
 
 const handleTouchEnd = (e) => {

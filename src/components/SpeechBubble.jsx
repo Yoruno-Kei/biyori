@@ -9,15 +9,16 @@ export default function SpeechBubble({
 }) {
   if (!text) return null;
 
-  const {
-    top,
-    left,
-    tailLeftPercent,
-    width,
-  } = calcBubblePosition({
-    faceX: positionX,
-    faceY: positionY,
-  });
+const {
+  top,
+  left,
+  tailLeftPercent,
+  width,
+  tailAngleDeg,
+} = calcBubblePosition({
+  faceX: positionX,
+  faceY: positionY,
+});
 
   const base =
     "absolute z-10 px-4 py-2 text-[clamp(14px,4vw,18px)] shadow-xl rounded-2xl max-w-[90vw] transition-all duration-300";
@@ -36,17 +37,17 @@ export default function SpeechBubble({
     >
       <span>{text}</span>
 
-      {/* しっぽ（三角） */}
-      <span
-        className="absolute w-5 h-5 bg-inherit border-inherit"
-        style={{
-          left: `${tailLeftPercent}%`,
-          transform: "translateX(-50%) rotate(45deg)",
-          top: "100%", // 吹き出しの下から出す
-          borderLeftWidth: 2,
-          borderBottomWidth: 2,
-        }}
-      />
+  {/* しっぽ（三角） */}
+<span
+  className="absolute w-5 h-5 bg-inherit border-inherit"
+  style={{
+    left: `${tailLeftPercent}%`,
+    transform: `translateX(-50%) rotate(${tailAngleDeg}deg)`,
+    top: "100%",
+    borderLeftWidth: 2,
+    borderBottomWidth: 2,
+  }}
+/>
 
       {/* ハート */}
       <span className="absolute -right-3 -top-3 animate-bounce">

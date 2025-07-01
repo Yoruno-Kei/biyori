@@ -73,9 +73,13 @@ const handleTap = () => {
   };
 
   // アバターの座標更新
-  const handlePosUpdate = ({ x, y }) => {
-    setPos({ x, y });
-  };
+const posRef = useRef({ x: 0, y: 0 }); // ← useRef に変更
+const [, forceUpdate] = useState(0); // 状態変化用
+
+const handlePosUpdate = ({ x, y }) => {
+  posRef.current = { x, y };
+  forceUpdate((v) => v + 1); // 即再レンダリング
+};
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-end bg-gradient-to-t from-pink-50/70 to-white pb-10 overflow-hidden">
@@ -92,8 +96,8 @@ const handleTap = () => {
         <SpeechBubble
           text={text}
           mood={mood}
-          positionX={pos.x}
-          positionY={pos.y}
+          positionX={posRef.current.x}
+          positionY={posRef.current.y}
         />
       )}
     </div>
