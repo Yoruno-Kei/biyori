@@ -6,6 +6,7 @@ import { fetchHiyoriLine } from "../api/GeminiClient";
 import { generateHiyoriPrompt } from "../utils/GeminiPrompt";
 import { liftLines } from "../utils/speechPresets";
 import useIdleMonitor from "../hooks/useIdleMonitor";
+import Ground from "../components/Ground";
 
 export default function Home() {
   const [text, setText] = useState("");
@@ -100,6 +101,7 @@ export default function Home() {
           positionY={pos.y}
         />
       )}
+            <Ground />
       <div className={`transition-transform duration-700 ${animClass}`}>
         <HiyoriAvatar
           onTap={handleTap}
@@ -107,6 +109,7 @@ export default function Home() {
           onLifted={() => speakFixedLine(liftLines, "warning")}
           onPosUpdate={handlePosUpdate}
         />
+        
       </div>
     </div>
   );

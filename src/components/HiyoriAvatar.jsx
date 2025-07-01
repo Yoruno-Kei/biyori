@@ -7,9 +7,9 @@ export default function HiyoriAvatar({ onTap, onSlide, onLifted, onPosUpdate }) 
   const pos = useRef({ x: 0, y: 0 });
   const isDragging = useRef(false);
   const requestRef = useRef(null);
-  const GROUND_Y = window.innerHeight - 180; // 地面位置の基準
+  const GROUND_Y = window.innerHeight - 96; // h-24の高さに合わせる
 
-  // 初期化: 中央に配置
+  // 初期位置: 画面下部中央
   useEffect(() => {
     onPosUpdate?.({ x: window.innerWidth / 2, y: GROUND_Y });
   }, []);
@@ -18,10 +18,14 @@ export default function HiyoriAvatar({ onTap, onSlide, onLifted, onPosUpdate }) 
     const el = avatarRef.current;
     if (!el) return;
 
+    // 回転や位置の更新
     el.style.transform = `translate(${pos.current.x}px, ${pos.current.y}px) rotate(${isDragging.current ? 90 : 0}deg)`;
+
+    // 吹き出し表示位置更新用
+    const rect = el.getBoundingClientRect();
     onPosUpdate?.({
-      x: el.getBoundingClientRect().left + el.offsetWidth / 2,
-      y: el.getBoundingClientRect().top + el.offsetHeight / 2,
+      x: rect.left + rect.width / 2,
+      y: rect.top,
     });
 
     requestRef.current = requestAnimationFrame(animate);
@@ -31,7 +35,7 @@ export default function HiyoriAvatar({ onTap, onSlide, onLifted, onPosUpdate }) 
     const t = e.touches[0];
     touchStart.current = { x: t.clientX, y: t.clientY };
     isDragging.current = true;
-    onLifted?.();
+    onLifted?.(); // 持ち上げ発話
     requestRef.current = requestAnimationFrame(animate);
   };
 
@@ -40,11 +44,19 @@ export default function HiyoriAvatar({ onTap, onSlide, onLifted, onPosUpdate }) 
     const t = e.touches[0];
     const dx = t.clientX - touchStart.current.x;
     const dy = t.clientY - touchStart.current.y;
+
     pos.current.x = dx;
-    pos.current.y = Math.min(dy, GROUND_Y - avatarRef.current.getBoundingClientRect().top - avatarRef.current.offsetHeight / 2);
+
+    // 地面より下に行かせない
+    const el = avatarRef.current;
+    if (el) {
+      const newTop = el.offsetTop + dy;
+      const maxY = GROUND_Y - el.offsetHeight;
+      pos.current.y = Math.min(dy, maxY - el.offsetTop);
+    }
   };
 
-  const handleTouchEnd = (e) => {
+  const handleTouchEnd = () => {
     if (!isDragging.current) return;
 
     cancelAnimationFrame(requestRef.current);
@@ -65,9 +77,10 @@ export default function HiyoriAvatar({ onTap, onSlide, onLifted, onPosUpdate }) 
       const el = avatarRef.current;
       if (el) {
         el.style.transform = `translate(${pos.current.x}px, ${pos.current.y}px) rotate(0deg)`;
+        const rect = el.getBoundingClientRect();
         onPosUpdate?.({
-          x: el.getBoundingClientRect().left + el.offsetWidth / 2,
-          y: el.getBoundingClientRect().top + el.offsetHeight / 2,
+          x: rect.left + rect.width / 2,
+          y: rect.top,
         });
       }
 
@@ -76,7 +89,6 @@ export default function HiyoriAvatar({ onTap, onSlide, onLifted, onPosUpdate }) 
       }
     };
     animateBack();
-
     touchStart.current = null;
   };
 
