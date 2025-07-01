@@ -6,12 +6,12 @@ export default function HiyoriAvatar({ onTap, onLifted, onPosUpdate }) {
   const isDragging = useRef(false);
   const dragOffset = useRef({ x: 0, y: 0 });
   const requestRef = useRef(null);
+  const hasLifted = useRef(false);
 
   const touchStartTime = useRef(0);
   const touchStartPos = useRef({ x: 0, y: 0 });
 
   const swingAngle = useRef(0);
-  const swingDir = useRef(1);
   const isFalling = useRef(false);
   const dropVelocity = useRef(0);
 
@@ -36,16 +36,17 @@ export default function HiyoriAvatar({ onTap, onLifted, onPosUpdate }) {
     const el = avatarRef.current;
     if (!el) return;
 
+    // ゆらゆら自然な揺れ（ドラッグ中のみ）
     if (isDragging.current) {
       swingAngle.current = Math.sin(Date.now() / 200) * 5;
     } else {
       swingAngle.current *= 0.9;
     }
 
+    // 落下アニメーション
     if (isFalling.current) {
       dropVelocity.current += 1.2;
       pos.current.y += dropVelocity.current;
-
       if (pos.current.y >= GROUND_Y) {
         pos.current.y = GROUND_Y;
         if (Math.abs(dropVelocity.current) > 4) {
@@ -57,7 +58,10 @@ export default function HiyoriAvatar({ onTap, onLifted, onPosUpdate }) {
       }
     }
 
-    el.style.transform = `translate(${pos.current.x}px, ${pos.current.y}px) rotate(${swingAngle.current}deg)`;
+    // 高さに応じたスケール（700px以下で縮小）
+    const scale = Math.min(1, window.innerHeight / 700);
+
+    el.style.transform = `translate(${pos.current.x}px, ${pos.current.y}px) rotate(${swingAngle.current}deg) scale(${scale})`;
     updatePosition();
     requestRef.current = requestAnimationFrame(animate);
   };
@@ -69,8 +73,8 @@ export default function HiyoriAvatar({ onTap, onLifted, onPosUpdate }) {
 
     const rect = el.getBoundingClientRect();
     dragOffset.current = {
-      x: t.clientX - (rect.left + rect.width / 2),
-      y: t.clientY - (rect.top + rect.height * 0.7),
+      x: t.clientX - (rect.left + rect.width * 0.1),
+      y: t.clientY - (rect.top + rect.height * 1.5),
     };
 
     touchStartTime.current = Date.now();
@@ -81,13 +85,23 @@ export default function HiyoriAvatar({ onTap, onLifted, onPosUpdate }) {
   };
 
   const handleTouchMove = (e) => {
-    if (!isDragging.current) return;
-    const t = e.touches[0];
+  if (!isDragging.current) return;
+  const t = e.touches[0];
 
-    const baseGround = window.innerHeight - 96;
-    pos.current.x = t.clientX - window.innerWidth / 2 - dragOffset.current.x;
-    pos.current.y = t.clientY - baseGround - dragOffset.current.y;
-  };
+  const movedX = Math.abs(t.clientX - touchStartPos.current.x);
+  const movedY = Math.abs(t.clientY - touchStartPos.current.y);
+
+  // 一定距離を超えたらドラッグ開始と判定し、onLiftedを呼ぶ
+  if (!hasLifted.current && (movedX > 10 || movedY > 10)) {
+    hasLifted.current = true;
+    onLifted?.();
+  }
+
+  const baseGround = window.innerHeight - 96;
+  pos.current.x = t.clientX - window.innerWidth / 2 - dragOffset.current.x;
+  pos.current.y = t.clientY - baseGround - dragOffset.current.y;
+};
+
 
   const handleTouchEnd = (e) => {
     const elapsed = Date.now() - touchStartTime.current;
@@ -96,9 +110,9 @@ export default function HiyoriAvatar({ onTap, onLifted, onPosUpdate }) {
     const isTap = elapsed < 200 && movedX < 10 && movedY < 10;
 
     if (isTap) {
-      onTap?.(); // タップとして処理
+      onTap?.();
     } else {
-      onLifted?.(); // ドラッグして離した時の処理
+      onLifted?.();
     }
 
     isDragging.current = false;
