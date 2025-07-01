@@ -1,6 +1,10 @@
 import React, { useEffect, useRef } from "react";
 
 export default function HiyoriAvatar({ onTap, onLifted, onPosUpdate }) {
+const isJumping = useRef(false);
+const jumpVelocity = useRef(0);
+
+
   const avatarRef = useRef(null);
   const pos = useRef({ x: 0, y: 0 });
   const isDragging = useRef(false);
@@ -15,7 +19,7 @@ export default function HiyoriAvatar({ onTap, onLifted, onPosUpdate }) {
   const isFalling = useRef(false);
   const dropVelocity = useRef(0);
 
-  const GROUND_Y = 0;
+  const GROUND_Y = -20;
 
   useEffect(() => {
     requestRef.current = requestAnimationFrame(animate);
@@ -28,7 +32,7 @@ export default function HiyoriAvatar({ onTap, onLifted, onPosUpdate }) {
     const rect = el.getBoundingClientRect();
     onPosUpdate({
       x: rect.left + rect.width / 2,
-      y: rect.top + rect.height / 2,
+      y: rect.top + rect.height * 0.28,
     });
   };
 
@@ -42,6 +46,17 @@ export default function HiyoriAvatar({ onTap, onLifted, onPosUpdate }) {
     } else {
       swingAngle.current *= 0.9;
     }
+
+    if (isJumping.current) {
+  pos.current.y += jumpVelocity.current;
+  jumpVelocity.current += 0.6; // 徐々に減速
+
+  if (jumpVelocity.current >= 0) {
+    isJumping.current = false;
+    isFalling.current = true;
+    dropVelocity.current = 0;
+  }
+}
 
     // 落下アニメーション
     if (isFalling.current) {
@@ -73,7 +88,7 @@ const handleTouchStart = (e) => {
 
   const rect = el.getBoundingClientRect();
   dragOffset.current = {
-    x: t.clientX - (rect.left + rect.width * 0.1),
+    x: t.clientX - (rect.left + rect.width * 0.3),
     y: t.clientY - (rect.top + rect.height * 1.5),
   };
 
@@ -100,14 +115,16 @@ const handleTouchMove = (e) => {
   const baseGround = window.innerHeight - 96;
   const newX = t.clientX - window.innerWidth / 2 - dragOffset.current.x;
   let newY = t.clientY - baseGround - dragOffset.current.y;
-
-  // 🔸 地面より下にいかないよう制限（最低でも 0 ）
   if (newY > 0) newY = 0;
 
   pos.current.x = newX;
   pos.current.y = newY;
-};
 
+  onPosUpdate?.({
+    x: t.clientX, // or rect.left + rect.width / 2 if precise face tracking
+    y: t.clientY - 100, // 顔の中心 or 任意オフセット
+  });
+};
 
 const handleTouchEnd = (e) => {
   const elapsed = Date.now() - touchStartTime.current;
@@ -116,6 +133,8 @@ const handleTouchEnd = (e) => {
   const isTap = elapsed < 200 && movedX < 10 && movedY < 10;
 
   if (isTap) {
+    jumpVelocity.current = -15;  // 上方向にジャンプ開始（-Y）
+    isJumping.current = true;
     onTap?.(); // タップ処理
   }
 
@@ -126,7 +145,7 @@ const handleTouchEnd = (e) => {
 };
   return (
     <div
-      className="fixed left-1/2 bottom-24 w-[50vw] max-w-xs select-none z-10"
+      className="fixed left-1/2 bottom-5 w-[50vw] max-w-xs select-none z-10"
       ref={avatarRef}
       style={{ transform: "translate(0, 0)", touchAction: "none" }}
       onTouchStart={handleTouchStart}

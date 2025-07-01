@@ -20,8 +20,8 @@ export async function fetchHiyoriLine(prompt) {
     return result?.candidates?.[0]?.content?.parts?.[0]?.text ?? null;
   };
 
-  // まず 2.5-flash を試す
-  const result2_5 = await tryModel("gemini-2.5-flash");
+  // まず 2.0-flash を試す
+  const result2_5 = await tryModel("gemini-2.0-flash");
   if (result2_5) return result2_5;
 
   // 次に 2.0-flash を試す

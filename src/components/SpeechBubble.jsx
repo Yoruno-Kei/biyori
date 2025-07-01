@@ -1,12 +1,23 @@
 import React from "react";
+import { calcBubblePosition } from "../utils/calcBubblePosition";
 
 export default function SpeechBubble({
   text,
   mood = "normal",
-  positionY = 0,
-  positionX = 0,
+  positionY = 0, // 顔のY座標（頭頂〜眉あたり）
+  positionX = 0, // 顔のX座標（中央）
 }) {
   if (!text) return null;
+
+  const {
+    top,
+    left,
+    tailLeftPercent,
+    width,
+  } = calcBubblePosition({
+    faceX: positionX,
+    faceY: positionY,
+  });
 
   const base =
     "absolute z-10 px-4 py-2 text-[clamp(14px,4vw,18px)] shadow-xl rounded-2xl max-w-[90vw] transition-all duration-300";
@@ -18,19 +29,10 @@ export default function SpeechBubble({
     sleep: "bg-blue-50 border-2 border-blue-200",
   }[mood] || "bg-white/80 border-2 border-pink-200";
 
-  // 安全な高さチェック（SSR対策）
-  const isBottom =
-    typeof window !== "undefined"
-      ? positionY < window.innerHeight * 0.33
-      : false;
-
   return (
     <div
       className={`${base} ${moodColor}`}
-      style={{
-        top: isBottom ? `${positionY + 100}px` : `${positionY - 140}px`,
-        left: `max(8px, min(${positionX - 80}px, calc(100vw - 160px)))`,
-      }}
+      style={{ top: `${top}px`, left: `${left}px`, width: `${width}px` }}
     >
       <span>{text}</span>
 
@@ -38,16 +40,15 @@ export default function SpeechBubble({
       <span
         className="absolute w-5 h-5 bg-inherit border-inherit"
         style={{
-          left: "50%",
+          left: `${tailLeftPercent}%`,
           transform: "translateX(-50%) rotate(45deg)",
-          bottom: isBottom ? "100%" : undefined,
-          top: isBottom ? undefined : "100%",
+          top: "100%", // 吹き出しの下から出す
           borderLeftWidth: 2,
           borderBottomWidth: 2,
         }}
       />
 
-      {/* ハートマーク（アニメ） */}
+      {/* ハート */}
       <span className="absolute -right-3 -top-3 animate-bounce">
         <svg width="24" height="24" viewBox="0 0 28 28">
           <path

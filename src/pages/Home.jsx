@@ -49,11 +49,14 @@ export default function Home() {
   useIdleMonitor(() => speak("sleep"), 600000); // 10分
 
   // タップ時
-  const handleTap = () => {
-    setAnimClass("animate-bounce-fast");
-    speak("happy");
-    setTimeout(() => setAnimClass(""), 700);
-  };
+const handleTap = () => {
+  console.log("🟢 タップ検知");
+  if (isRequesting) return;
+  setAnimClass("animate-bounce-fast");
+  speak("happy");
+  setTimeout(() => setAnimClass(""), 700);
+};
+
 
   // スライド時
   const handleSlide = ({ dx, dy }) => {
