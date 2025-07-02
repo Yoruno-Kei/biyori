@@ -7,7 +7,8 @@ export async function fetchHiyoriLine(prompt) {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        contents: [{ role: "user", parts: [{ text: prompt }] }]
+        model: modelName,
+        contents: [{ parts: [{ text: prompt }] }]
       }),
     });
 
@@ -17,17 +18,19 @@ export async function fetchHiyoriLine(prompt) {
     }
 
     const result = await response.json();
-    return result?.candidates?.[0]?.content?.parts?.[0]?.text ?? null;
+    const text = result?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
+    const match = text.match(/^\[(.*?)\](?:「|『)(.+?)(?:」|』)/);
+    if (match) {
+      return { mood: match[1].trim(), text: match[2].trim() };
+    } else {
+      return { mood: "normal", text: text.replace(/^「|」$/g, "").trim() };
+    }
   };
 
-  // まず 2.0-flash を試す
-  const result2_5 = await tryModel("gemini-2.0-flash");
-  if (result2_5) return result2_5;
+  const result = await tryModel("gemini-2.0-flash");
+  if (result) return result;
 
-  // 次に 2.0-flash を試す
-  const result2_0 = await tryModel("gemini-2.0-flash");
-  if (result2_0) return result2_0;
-
-  // 両方失敗したらダミー返答
-  return "……（ひよりはちょっと黙っているみたいです）";
+  await new Promise((res) => setTimeout(res, 500));
+  const retry = await tryModel("gemini-2.0-flash");
+  return retry || { mood: "normal", text: "……（ひよりはちょっと黙っているみたいです）" };
 }

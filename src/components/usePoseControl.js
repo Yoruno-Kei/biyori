@@ -1,8 +1,8 @@
-import { useState } from "react";
-
-const moodToPose = {
+// src/components/usePoseControl.js
+export const moodToPose = {
   normal: "idle",
   happy: "talk",
+  sleep_sit: "sleep_sit",
   sleep: "sleep",
   warning: "worry",
   angry: "angry",
@@ -17,12 +17,4 @@ const moodToPose = {
   turn: "turn",
 };
 
-export default function usePoseControl() {
-  const [pose, setPose] = useState("idle");
-
-  const setPoseByMood = (mood) => {
-    setPose(moodToPose[mood] || "idle");
-  };
-
-  return { pose, setPose, setPoseByMood };
-}
+export const getPoseFromMood = (mood) => moodToPose[mood] || "idle";

@@ -6,3 +6,9 @@ export const liftLines = [
   "ご、ご主人…！？",
   "服ひっぱったらダメ〜っ！"
 ];
+
+export const dragDropLines = [
+  { text: "いたた……ひどいですっ", mood: "sad" },
+  { text: "落っことさないでくださいっ", mood: "angry" },
+  { text: "うぅ……ひよりはぬいぐるみじゃないですっ", mood: "sad" },
+];

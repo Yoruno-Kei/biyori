@@ -5,6 +5,7 @@ const poseImages = {
   grabed: "/biyori/images/Hiyori_grabbed.png",
   sit_fall: "/biyori/images/Hiyori_sit_fall.png",
   sit: "/biyori/images/Hiyori_sit.png",
+  sleep: "/biyori/images/Hiyori_sleep_sit.png",
   sleep: "/biyori/images/Hiyori_sleep.png",
   jump: "/biyori/images/Hiyori_jump.png",
   worry: "/biyori/images/Hiyori_worry.png",
