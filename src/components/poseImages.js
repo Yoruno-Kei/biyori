@@ -1,5 +1,6 @@
 const poseImages = {
   idle: "/biyori/images/Hiyori_idle.png",
+  normal_idle: "/biyori/images/Hiyori_idle1.png",
   point: "/biyori/images/Hiyori_point.png",
   walk: "/biyori/images/Hiyori_walk.png",
   grabed: "/biyori/images/Hiyori_grabbed.png",

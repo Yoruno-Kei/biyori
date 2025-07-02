@@ -44,7 +44,7 @@ const moodColor = {
     left: `${tailLeftPercent}%`,
     transform: `translateX(-50%) rotate(${tailAngleDeg + 90}deg)`,
     transformOrigin: "top center",
-    top: "170%",
+    top: "130%",
     clipPath: "polygon(50% 0%, 0% 100%, 100% 100%)", // 三角形ベース
     borderLeftWidth: 2,
     borderBottomWidth: 2,

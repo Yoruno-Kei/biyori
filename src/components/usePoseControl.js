@@ -1,6 +1,7 @@
 // src/components/usePoseControl.js
 export const moodToPose = {
   normal: "idle",
+  normal_idle: "normal_idle",
   happy: "talk",
   sleep_sit: "sleep_sit",
   sleep: "sleep",
