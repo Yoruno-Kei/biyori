@@ -128,7 +128,7 @@ export default function HiyoriAvatar({
     const isTap = elapsed < 200 && movedX < 10 && movedY < 10;
 
     if (isTap) {
-      jumpVelocity.current = -20;
+      jumpVelocity.current = -10
       isJumping.current = true;
       onTap?.();
     }

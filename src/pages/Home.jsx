@@ -91,7 +91,7 @@ export default function Home() {
   };
 
   // ✅ スライド時
-  const handleSlide = ({ dx }) => {
+const handleSlide = ({ dx }) => {
   if (isDraggingNow) return;
 
   setIsDraggingNow(true);
@@ -99,27 +99,30 @@ export default function Home() {
   setDirection(dx < 0 ? "left" : "right");
   setLastIdleTime(Date.now());
 
+  // ステップ①：少し待ってから落下（grabed表示のまま）
   setTimeout(() => {
     setPose("sit_fall");
 
-    // 🟡 セリフ＋感情を取得
+    // ステップ②：さらに待ってからセリフ＋mood表示（画像も切替）
     const { text: dropLine, mood: dropMood } =
       dragDropLines[Math.floor(Math.random() * dragDropLines.length)];
 
-    // セリフとmood表示（画像もmoodで切替）
     setTimeout(() => {
       setText(dropLine);
       setMood(dropMood);
       setShowBubble(true);
+
+      // セリフに応じた画像に切り替え（ここが重要）
       setPose(getPoseFromMood(dropMood));
 
+      // ステップ③：セリフ表示が終わったら idle に戻す
       setTimeout(() => {
         setShowBubble(false);
         setPose("idle");
         setIsDraggingNow(false);
       }, Math.max(3000, dropLine.length * 100));
-    }, 600);
-  }, 600);
+    }, 400); // sit_fall → 表情切替までの待機
+  }, 400); // grabed → sit_fall までの待機
 };
 
   // ✅ 放置時セリフ（5〜8分）
