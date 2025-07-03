@@ -1,9 +1,12 @@
-import React from "react";
+import React, { useState } from "react";
 import SpeechBubble   from "../components/SpeechBubble";
 import HiyoriAvatar   from "../components/HiyoriAvatar";
 import { liftLines }  from "../utils/speechPresets";
 import Ground         from "../components/Ground";
 import useHiyoriLogic from "../hooks/useHiyoriLogic";
+import TopSwiper from "../components/TopSwiper";
+import PersonalModal   from "../components/PersonalModal";
+import { AppDataProvider } from "../contexts/AppDataContext";
 
 export default function Home(){
   const {
@@ -13,8 +16,15 @@ export default function Home(){
     posRef,speakDropLine,setDirection
   } = useHiyoriLogic();
 
+  const [openModal, setOpenModal] = useState(false);
+
   return(
-    <div className="min-h-screen flex flex-col items-center justify-end bg-gradient-to-t from-pink-50/70 to-white pb-10 overflow-hidden">
+    <AppDataProvider>
+      <div className="min-h-screen flex flex-col justify-end overflow-hidden">
+      <TopSwiper />
+        {/* ⚙ ボタン */}
+        <button onClick={()=>setOpenModal(true)}
+                className="fixed top-2 right-2 z-30 text-xl">⚙</button>
       <Ground/>
       <div className={animClass}>
         <HiyoriAvatar
@@ -23,7 +33,7 @@ export default function Home(){
         isSpeaking={isSpeaking}
         setDirection={setDirection}
         onTap={handleTap}
-        onLifted={()=>speakFixedLine()}        /* liftLines はデフォルト引数で使用 */
+        onLifted={() => speakFixedLine(liftLines, "warning")}        /* liftLines はデフォルト引数で使用 */
         onPosUpdate={handlePosUpdate}
         speakDropLine={speakDropLine}
       />
@@ -36,6 +46,9 @@ export default function Home(){
           positionY={posRef.current.y}
         />
       )}
-    </div>
+              {/* ③ モーダル */}
+              <PersonalModal open={openModal} onClose={() => setOpenModal(false)} />
+      </div>
+    </AppDataProvider>
   );
 }

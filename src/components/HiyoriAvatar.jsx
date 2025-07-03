@@ -123,8 +123,8 @@ export default function HiyoriAvatar({
     const r = el.getBoundingClientRect();
 
     dragOffset.current = {
-      x: t.clientX - (r.left + r.width / 2.3),
-      y: t.clientY - (r.top  + r.height * 0.85),
+      x: t.clientX - (r.left + r.width / 2),
+      y: t.clientY - (r.top  + r.height *1),
     };
 
     isDragging.current = true;
@@ -163,19 +163,23 @@ export default function HiyoriAvatar({
       t.clientY - (e.targetTouches[0]?.clientY ?? t.clientY)
     );
     const elapsed = Date.now() - touchStart.current;
-    const isTap   = moved < 10 && elapsed < 200;
+    const isTap = moved < 10 && elapsed < 200;
 
-    if (isTap && !isSpeaking) {
+  if (isTap && !isSpeaking) {
+    // onTap() の戻り値でジャンプ可否を判断
+    const allowJump = onTap ? onTap() !== false : true;
+
+    if (allowJump) {
       isJumping.current = true;
       jumpVel.current   = -12;
-      fromDrag.current  = false;
-      onTap?.();
-    } else {
-      isFalling.current = true;
-      fallVel.current   = 0;
     }
-    isDragging.current = false;
-  };
+    fromDrag.current  = false;
+  } else {
+    isFalling.current = true;
+    fallVel.current   = 0;
+  }
+  isDragging.current = false;
+};
 
   /* pose 決定 */
   let displayPose = pose;

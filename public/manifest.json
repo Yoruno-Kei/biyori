@@ -16,5 +16,7 @@
     "start_url": "/biyori/",
     "display": "standalone",
     "background_color": "#fff0f6",
-    "theme_color": "#f883b6"
+    "theme_color": "#f883b6",
+    "categories": ["utilities", "productivity"],
+    "permissions": ["push", "notifications"] 
 }

@@ -1,36 +1,51 @@
 const API_KEY = process.env.REACT_APP_GEMINI_API_KEY;
 
-export async function fetchHiyoriLine(prompt) {
-  const tryModel = async (modelName) => {
-    const endpoint = `https://generativelanguage.googleapis.com/v1/models/${modelName}:generateContent?key=${API_KEY}`;
-    const response = await fetch(endpoint, {
+/**
+ * Gemini へプロンプトを送りテキストを返す
+ *
+ * @param {string} prompt
+ * @param {"hiyori" | "raw"} mode
+ */
+export async function fetchGemini(prompt, mode = "hiyori") {
+  /* 試行順序: 2.5 → 2.5 → 2.0 */
+  const models = ["gemini-2.5-flash", "gemini-2.5-flash", "gemini-2.0-flash"];
+
+  for (let i = 0; i < models.length; i++) {
+    const modelName = models[i];
+    const endpoint =
+      `https://generativelanguage.googleapis.com/v1/models/${modelName}:generateContent?key=${API_KEY}`;
+
+    const res = await fetch(endpoint, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         model: modelName,
         contents: [{ parts: [{ text: prompt }] }]
-      }),
+      })
     });
 
-    if (!response.ok) {
-      console.warn(`[${modelName}] failed with status ${response.status}`);
-      return null;
-    }
+    /* --- 成功時パースして return --- */
+    if (res.ok) {
+      const out  = await res.json();
+      const text = out?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
 
-    const result = await response.json();
-    const text = result?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
-    const match = text.match(/^\[(.*?)\](?:「|『)(.+?)(?:」|』)/);
-    if (match) {
-      return { mood: match[1].trim(), text: match[2].trim() };
-    } else {
+      if (mode === "raw") return text;
+
+      const m = text.match(/^\[(.*?)\](?:「|『)(.+?)(?:」|』)/);
+      if (m) {
+        return { mood: m[1].trim(), text: m[2].trim() };
+      }
       return { mood: "normal", text: text.replace(/^「|」$/g, "").trim() };
     }
-  };
 
-  const result = await tryModel("gemini-2.0-flash");
-  if (result) return result;
+    /* --- 失敗時ログ & 次モデルまで 1 秒待つ --- */
+    console.warn(`[${modelName}] -> ${res.status}`);
+    if (i < models.length - 1) {
+      await new Promise(r => setTimeout(r, 1000));   // ← 1 秒待機
+    }
+  }
 
-  await new Promise((res) => setTimeout(res, 500));
-  const retry = await tryModel("gemini-2.5-flash");
-  return retry || { mood: "normal", text: "……（ひよりはちょっと黙っているみたいです）" };
+  /* すべて失敗 */
+  if (mode === "raw") return "";
+  return { mood: "normal", text: "……（ひよりはちょっと黙っているみたいです）" };
 }

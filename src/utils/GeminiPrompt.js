@@ -36,10 +36,53 @@ ${cond.length ? cond.join("\n") : "なし"}
 ■お願い
 条件を参考に、ひよりらしい 1〜2 行（40〜80 文字）の短いセリフを 1 つだけ作ってください。
 
-■出力形式
+■出力形式(厳守)
 [mood]「セリフ」
 
-・mood: happy / sleep / sad / angry / warning / normal
-・セリフは必ず全角の「」で囲む
+・mood: happy / sleep / sad / angry / warning / normal / surprise
 `.trim();
 }
+
+/* ─────────────────────────────────────────────
+   今日のおすすめスケジュール生成用プロンプト
+   --------------------------------------------
+   引数
+    - dateStr    : "2025-07-05" など ISO 文字列
+    - planText  : ユーザーが入力した今日の予定（自由文）
+    - feeling   : 今日の気分（"fine" | "tired" | …任意文字列）
+──────────────────────────────────────────── */
+export function generateSchedulePrompt({ dateStr, planText, feeling }) {
+  const dateJa = new Date(dateStr).toLocaleDateString("ja-JP", {
+    month: "long",
+    day:   "numeric",
+    weekday: "short",
+  });
+
+  return `
+あなたは有能な執事 AI で、ユーザーの日程を 24 時間円グラフに分割して提案します。
+
+## 目的
+ユーザー (${dateJa}) の予定・気分を考慮し、
+0〜24 時間を最大 8 区間にまとめた「おすすめスケジュール」を作成する。
+
+## 入力
+● 予定メモ:
+${planText || "（特になし）"}
+
+● 気分:
+${feeling || "（未回答）"}
+
+## 出力フォーマット（JSON）
+[
+  {"label":"睡眠","start":0,"end":6,"color":"#b8e0fe"},
+  {"label":"仕事","start":9,"end":18,"color":"#fecaca"},
+  …最大 8 件
+]
+
+- start/end は 0〜24 の実数 (30分刻みなら 7.5 など可)  
+- 時間が重複・欠落しないよう必ず 0→24 を埋める  
+- color はパステル系 HEX を自由に選ぶ  
+- 解析コメントやコードブロックは出力しない。**JSON 配列のみ** を返す
+`.trim();
+}
+

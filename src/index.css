@@ -14,7 +14,61 @@ body {
 .animate-float {
   animation: float 3s ease-in-out infinite;
 }
+/* ==========  Portrait-Lock & Rotate-Overlay  ========== */
 html, body {
   overflow: hidden;
   height: 100%;
 }
+
+/* ========== portrait-lock & rotate-mask  ========== */
+
+/* 本体を 90° 回転して縦 UI を保つ */
+.app-portrait-lock { width:100%;height:100%;transform-origin:top left; }
+@media (orientation: landscape) {
+  .app-portrait-lock {
+    transform: rotate(90deg) translateY(-100%);
+    width: 100vh; height: 100vw; overflow:hidden;
+  }
+}
+
+/* 黒オーバレイ：常に最前面 / 全画面 */
+.rotate-mask{
+  position:fixed;inset:0;z-index:2000;
+  background:#000;               /* 真っ黒 */
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  color:#fff;text-align:center;
+  font-size:15px;letter-spacing:.05em;
+}
+
+/* スマホ＋矢印を縦→横→縦にアニメーション */
+.phone-wrap{ animation:tilt 2.4s ease-in-out infinite; }
+@keyframes tilt{
+  0%   { transform: rotate(90deg); }   /* 横向きで開始 */
+  60%  { transform: rotate(0deg); }     /* 立ち上がる */
+  100% { transform: rotate(0deg); }     /* 縦でキープ */
+}
+
+/* アイコン共通装飾 */
+.phone{ width:60px;height:100px;fill:none;stroke:#fff;stroke-width:4; }
+.arrow{ width:32px;height:32px;margin-top:8px;fill:none;stroke:#fff; }
+.msg{ margin-top:14px;font-weight:600; }
+
+/* Landscape でオーバレイも 90°回転—> 視覚的に“たてに起こす” */
+@media (orientation: landscape){
+  .rotate-mask{
+    transform:rotate(90deg) translateY(-100%);
+    transform-origin:top left;
+    width:100vh;height:100vw;
+  }
+
+    /* ★ 中身を -90° で打ち消し → 文字が横向き表示 */
+    .rotate-mask .rm-inner{
+      transform: rotate(-90deg);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+}
+

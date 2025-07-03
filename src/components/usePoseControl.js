@@ -2,7 +2,8 @@
 export const moodToPose = {
   normal: "idle",
   normal_idle: "normal_idle",
-  happy: "talk",
+  talk: "talk",
+  happy: "happy",
   sleep_sit: "sleep_sit",
   sleep: "sleep",
   warning: "worry",
@@ -16,6 +17,8 @@ export const moodToPose = {
   walk: "walk",
   back: "back",
   turn: "turn",
+  surprise: "surprise",
+  thinking: "thinking",
 };
 
 export const getPoseFromMood = (mood) => moodToPose[mood] || "idle";
