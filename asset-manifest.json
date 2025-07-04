@@ -1,0 +1,13 @@
+{
+  "files": {
+    "main.css": "/biyori/static/css/main.b3042c73.css",
+    "main.js": "/biyori/static/js/main.6c80a9c9.js",
+    "index.html": "/biyori/index.html",
+    "main.b3042c73.css.map": "/biyori/static/css/main.b3042c73.css.map",
+    "main.6c80a9c9.js.map": "/biyori/static/js/main.6c80a9c9.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.b3042c73.css",
+    "static/js/main.6c80a9c9.js"
+  ]
+}
